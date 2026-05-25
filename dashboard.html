@@ -1,0 +1,266 @@
+<!-- templates/dashboard.html -->
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Security Services</title>
+  <meta http-equiv="refresh" content="10">
+  <script src="{{ url_for('static',filename = 'js/chart.umd.js')}}"></script>
+</head>
+<body>
+
+  <h1 style="text-align:center;">Security Services</h1>
+
+  <div class="dashboard-container">
+    <div class="chart-box">
+      <h2>Total Requests Over Time</h2>
+      <canvas id="requestChart"></canvas>
+    </div>
+
+    <div class="chart-box">
+      <h2>System Uptime</h2>
+      <canvas id="uptimeChart"></canvas>
+    </div>
+
+    <div class="chart-box">
+      <h2>Memory Usage</h2>
+      <canvas id="memoryChart"></canvas>
+    </div>
+
+    <div class="chart-box">
+      <h2>System Crashes</h2>
+      <canvas id="CrashChart"></canvas>
+    </div>
+      
+    <div class="service-chart">
+      <h2>Service Status</h2>
+      <canvas id="serviceChart"></canvas>
+    </div>
+
+  </div>
+
+  <style>
+    body {
+      background-color: #f9f9f9;
+    }
+    .dashboard-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 40px;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .chart-box {
+      width: 45%;
+      min-width: 300px;
+      height: 300px;
+      margin-bottom: 40px;
+    }
+
+    h2 {
+      text-align: center;
+    }
+
+    .service-chart{
+      width: 92%;
+      height: 300px;
+      margin-bottom: 40px;
+    }
+
+    canvas{
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+
+  <script>
+
+    const labels = JSON.parse('{{ timestamps | tojson | safe }}');
+    const data = JSON.parse('{{ request_counts | tojson | safe }}');
+    const uptimeData = JSON.parse('{{ uptime_seconds_list | tojson | safe }}')
+    const memoryData = JSON.parse('{{ memory_values | tojson | safe }}');
+    const crashData = JSON.parse('{{ crash_counts | tojson | safe }}');
+    const serviceLabels = JSON.parse('{{ service_labels | tojson | safe }}');
+    const serviceStatusValues = JSON.parse('{{ service_status_values | tojson | safe }}');
+
+    //Total Request Chart
+    const ctx1 = document.getElementById('requestChart').getContext('2d');
+    const requestchart = new Chart(ctx1, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'System : Total Requests',
+          data: data,
+          fill: false,
+          borderColor: 'rgb(75, 192, 192)',
+          tension: 0.1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: false
+          }
+        }
+      }
+    });
+
+    const ctx2 = document.getElementById('uptimeChart').getContext('2d');
+    const Uptimechart = new Chart(ctx2, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'System : Uptime',
+          data: uptimeData,
+          fill: false,
+          borderColor: 'rgb(75, 192, 192)',
+          tension: 0.1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: false
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks:{
+              label: function(context){
+                const seconds = context.raw;
+                const days = Math.floor(seconds/(24 * 3600));
+                const hours = Math.floor((seconds % (24 * 3600)) / 3600);
+                const minutes = Math.floor((seconds % 3600)  / 60);
+                const secs = seconds % 60;
+
+                return `uptime : ${days}d ${hours}h ${minutes}m ${secs}s`;
+              }
+            }
+          }
+        }
+      }
+    });
+    // Memory Chart
+    const ctx3 = document.getElementById('memoryChart').getContext('2d');
+    const memoryChart = new Chart(ctx3, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'System : Memory Usage (GB)',
+          data: memoryData,
+          fill: false,
+          borderColor: 'rgb(255, 159, 64)',
+          tension: 0.1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: false
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return `Memory: ${context.raw.toFixed(2)} GB`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    //crash chart
+    const ctx4 = document.getElementById('CrashChart').getContext('2d');
+    const CrashChart = new Chart(ctx4, {
+      type: 'line',
+      data: {
+        labels: labels,
+        datasets: [{
+          label: 'System : Crash Count',
+          data: crashData,
+          fill: false,
+          borderColor: 'rgb(75, 192, 192)',
+          tension: 0.1
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+          y: {
+            beginAtZero: false
+          }
+        },
+        plugins: {
+          tooltip: {
+            callbacks: {
+              label: function(context){
+                return `Crashes: ${context.raw}`;
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Services
+    const ctx5 = document.getElementById('serviceChart').getContext('2d');
+    const serviceChart = new Chart(ctx5, {
+        type: 'bar',
+        data: {
+            labels: serviceLabels,
+            datasets: [{
+                label: 'Service : Status',
+                data: serviceStatusValues.map(() => 1),
+                backgroundColor: serviceStatusValues.map(v => v === 1 ? 'green' : 'red')
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins:{
+                tooltip:{
+                  callbacks:{
+                    label: function(context){
+                      const label = serviceLabels[context.dataIndex];
+                      const status = serviceStatusValues[context.dataIndex];
+                      return `${label}: ${status === 1 ? 'In Service' : 'Down'}`;
+                    }
+                  }
+                },
+                legend: {
+                  display: false
+                }
+            },
+            scales: {
+              x: {
+                display : false
+              },
+                y: {
+                    min: 0,
+                    max: 1,
+                    ticks: {
+                        display : false
+                    },
+                    grid:{
+                      display : false
+                    }
+                }
+            }
+        }
+    });
+  </script>
+</body>
+</html>
+
