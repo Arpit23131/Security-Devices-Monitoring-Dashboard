@@ -38,7 +38,7 @@ Security-Devices-Monitoring-Dashboard/
 ## Dashboard Screenshots
 
 ### Main Dashboard
-![Dashboard Screenshot](screenshots/dashboard.png)
+![Dashboard Screenshot](https://github.com/Arpit23131/Security-Devices-Monitoring-Dashboard/tree/main/screenshots)
 
 ## Functionalities
 - Fetches live monitoring data from APIs
